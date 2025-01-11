@@ -69,14 +69,15 @@ then
 fi
 
 if [ $PKGARCH = "x64" ]; then
-  cp ./wintun/bin/amd64/wintun.dll ./wintun.dll
+  mv ./wintun/bin/amd64/wintun.dll ./wintun.dll
 elif [ $PKGARCH = "x86" ]; then
-  cp ./wintun/bin/x86/wintun.dll ./wintun.dll
+  mv ./wintun/bin/x86/wintun.dll ./wintun.dll
 elif [ $PKGARCH = "arm" ]; then
-  cp ./wintun/bin/arm/wintun.dll ./wintun.dll
+  mv ./wintun/bin/arm/wintun.dll ./wintun.dll
 elif [ $PKGARCH = "arm64" ]; then
-  cp ./wintun/bin/arm64/wintun.dll ./wintun.dll
+  mv ./wintun/bin/arm64/wintun.dll ./wintun.dll
 else
   echo "wasn't sure which architecture to get wintun for"
   exit 1
 fi
+rm -rf ./wintun
