@@ -34,10 +34,12 @@ if not exist "%SCRIPT_DIR%yggdrasil.conf" (
     "%SCRIPT_DIR%yggdrasil.exe" -genconf > "%SCRIPT_DIR%yggdrasil.conf"
     if errorlevel 1 (
       echo Failed to generate the configuration file!
+      pause
       exit /b 1
     )
   ) else (
     echo yggdrasil.exe not found!
+    pause
     exit /b 1
   )
 )
@@ -47,10 +49,12 @@ if exist "%SCRIPT_DIR%yggdrasil.conf" (
   "%SCRIPT_DIR%yggdrasil.exe" -useconffile "%SCRIPT_DIR%yggdrasil.conf"
   if errorlevel 1 (
     echo Failed to start Yggdrasil!
+    pause
     exit /b 1
   )
 ) else (
   echo yggdrasil.conf file is missing!
+  pause
   exit /b 1
 )
 EOF
