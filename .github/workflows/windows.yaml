@@ -34,12 +34,15 @@ jobs:
           echo "COMMIT_NUMBER=$(git rev-list --count HEAD)" >> $GITHUB_ENV
         shell: bash
 
+      - name: Remove src
+        run: find . -type f ! -name 'yggdrasilctl.exe' ! -name 'yggdrasil.exe' ! -name 'wintun.dll' ! -name 'start.bat' -delete
+        shell: bash
+
       - name: Archive Release
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
           filename: 'yggdrasil-${{ env.SHORT_SHA }}.zip'
-          exclusions: '*.git* *cmd* *contrib* *misc* *src* *go* build Dockerfile clean'
 
       - name: Create Pre-release
         id: create_release
@@ -47,7 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: "build-${{ env.SHORT_SHA }}-${{ env.COMMIT_NUMBER }}"
+          tag_name: "build-${{ env.COMMIT_NUMBER }}-${{ env.SHORT_SHA }}"
           release_name: "Build from commit ${{ env.SHORT_SHA }}"
           prerelease: true
           draft: false
