@@ -17,14 +17,34 @@ dotnet tool install --global wix --version 5.0.0
 [ "${PKGARCH}" == "arm64" ] && GOOS=windows GOARCH=arm64 CGO_ENABLED=0 ./build
 
 # Create the postinstall script
-cat > updateconfig.bat << EOF
-if not exist %ALLUSERSPROFILE%\\Yggdrasil (
-  mkdir %ALLUSERSPROFILE%\\Yggdrasil
-)
-if not exist %ALLUSERSPROFILE%\\Yggdrasil\\yggdrasil.conf (
-  if exist yggdrasil.exe (
-    yggdrasil.exe -genconf > %ALLUSERSPROFILE%\\Yggdrasil\\yggdrasil.conf
+cat > start.bat << EOF
+@echo off
+set "SCRIPT_DIR=%~dp0"
+
+if not exist "%SCRIPT_DIR%yggdrasil.conf" (
+  if exist "%SCRIPT_DIR%yggdrasil.exe" (
+    echo Generating yggdrasil.conf...
+    "%SCRIPT_DIR%yggdrasil.exe" -genconf > "%SCRIPT_DIR%yggdrasil.conf"
+    if errorlevel 1 (
+      echo Failed to generate the configuration file!
+      exit /b 1
+    )
+  ) else (
+    echo yggdrasil.exe not found!
+    exit /b 1
   )
+)
+
+if exist "%SCRIPT_DIR%yggdrasil.conf" (
+  echo Starting Yggdrasil with the configuration file...
+  "%SCRIPT_DIR%yggdrasil.exe" -useconffile "%SCRIPT_DIR%yggdrasil.conf"
+  if errorlevel 1 (
+    echo Failed to start Yggdrasil!
+    exit /b 1
+  )
+) else (
+  echo yggdrasil.conf file is missing!
+  exit /b 1
 )
 EOF
 
@@ -49,13 +69,13 @@ then
 fi
 
 if [ $PKGARCH = "x64" ]; then
-  PKGWINTUNDLL=wintun/bin/amd64/wintun.dll
+  cp ./wintun/bin/amd64/wintun.dll ./wintun.dll
 elif [ $PKGARCH = "x86" ]; then
-  PKGWINTUNDLL=wintun/bin/x86/wintun.dll
+  cp ./wintun/bin/x86/wintun.dll ./wintun.dll
 elif [ $PKGARCH = "arm" ]; then
-  PKGWINTUNDLL=wintun/bin/arm/wintun.dll
+  cp ./wintun/bin/arm/wintun.dll ./wintun.dll
 elif [ $PKGARCH = "arm64" ]; then
-  PKGWINTUNDLL=wintun/bin/arm64/wintun.dll
+  cp ./wintun/bin/arm64/wintun.dll ./wintun.dll
 else
   echo "wasn't sure which architecture to get wintun for"
   exit 1
