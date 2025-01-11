@@ -19,6 +19,13 @@ dotnet tool install --global wix --version 5.0.0
 # Create the postinstall script
 cat > start.bat << EOF
 @echo off
+
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    powershell -Command "Start-Process '%~0' -Verb RunAs"
+    exit /b
+)
+
 set "SCRIPT_DIR=%~dp0"
 
 if not exist "%SCRIPT_DIR%yggdrasil.conf" (
