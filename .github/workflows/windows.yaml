@@ -1,0 +1,62 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - windows
+
+jobs:
+  build:
+    name: Build and Upload
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+
+      - name: Setup .NET Core SDK
+        uses: actions/setup-dotnet@v4
+
+      - name: Build package
+        run: sh contrib/windows/build-windows.sh x64
+
+      - name: Get short commit SHA and commit count
+        id: vars
+        run: | 
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "COMMIT_NUMBER=$(git rev-list --count HEAD)" >> $GITHUB_ENV
+
+      - name: Archive Release
+        uses: thedoctor0/zip-release@0.7.5
+        with:
+          type: 'zip'
+          filename: 'yggdrasil-${{ env.SHORT_SHA }}.zip'
+          path: 'yggdrasil.exe yggdrasilctl.exe updateconfig.bat'
+
+      - name: Create Pre-release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "build-${{ env.SHORT_SHA }}-${{ env.COMMIT_NUMBER }}"
+          release_name: "Build from commit ${{ env.SHORT_SHA }}"
+          prerelease: true
+          draft: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./yggdrasil-${{ env.SHORT_SHA }}.zip
+          asset_name: yggdrasil-${{ env.SHORT_SHA }}.zip
+          asset_content_type: application/zip
