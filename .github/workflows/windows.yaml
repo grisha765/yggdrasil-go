@@ -38,7 +38,7 @@ jobs:
         with:
           type: 'zip'
           filename: 'yggdrasil-${{ env.SHORT_SHA }}.zip'
-          path: 'yggdrasil.exe yggdrasilctl.exe updateconfig.bat'
+          exclusions: '*.git* *cmd* *contrib* *misc* *src* *go* build Dockerfile clean'
 
       - name: Create Pre-release
         id: create_release
