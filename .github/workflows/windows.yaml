@@ -35,7 +35,9 @@ jobs:
         shell: bash
 
       - name: Remove src
-        run: find . -type f ! -name 'yggdrasilctl.exe' ! -name 'yggdrasil.exe' ! -name 'wintun.dll' ! -name 'start.bat' -delete
+        run: |
+          find . -type f ! -name 'yggdrasilctl.exe' ! -name 'yggdrasil.exe' ! -name 'wintun.dll' ! -name 'start.bat' -delete
+          find . -depth -type d -empty -delete
         shell: bash
 
       - name: Archive Release
