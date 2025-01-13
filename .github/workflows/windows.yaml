@@ -44,7 +44,7 @@ jobs:
         uses: thedoctor0/zip-release@0.7.5
         with:
           type: 'zip'
-          filename: 'yggdrasil-${{ env.SHORT_SHA }}.zip'
+          filename: 'yggdrasil-windows-${{ env.SHORT_SHA }}.zip'
 
       - name: Create Pre-release
         id: create_release
@@ -63,6 +63,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./yggdrasil-${{ env.SHORT_SHA }}.zip
-          asset_name: yggdrasil-${{ env.SHORT_SHA }}.zip
+          asset_path: ./yggdrasil-windows-${{ env.SHORT_SHA }}.zip
+          asset_name: yggdrasil-windows-${{ env.SHORT_SHA }}.zip
           asset_content_type: application/zip
