@@ -1,5 +1,4 @@
 //go:build linux
-// +build linux
 
 package core
 
@@ -23,7 +22,7 @@ func (t *linkTCP) getControl(sintf string) func(string, string, syscall.RawConn)
 		}
 		_ = c.Control(btd)
 		if err != nil {
-			t.links.core.log.Debugln("Failed to set SO_BINDTODEVICE:", sintf)
+			t.core.log.Debugln("Failed to set SO_BINDTODEVICE:", sintf)
 		}
 		return t.tcpContext(network, address, c)
 	}

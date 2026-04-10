@@ -28,7 +28,7 @@ func (l *links) newLinkTCP() *linkTCP {
 }
 
 func (l *linkTCP) dial(ctx context.Context, url *url.URL, info linkInfo, options linkOptions) (net.Conn, error) {
-	return l.links.findSuitableIP(url, func(hostname string, ip net.IP, port int) (net.Conn, error) {
+	return l.findSuitableIP(url, func(hostname string, ip net.IP, port int) (net.Conn, error) {
 		addr := &net.TCPAddr{
 			IP:   ip,
 			Port: port,
@@ -69,6 +69,13 @@ func (l *linkTCP) dialerFor(dst *net.TCPAddr, sintf string) (*net.Dialer, error)
 		dialer.Control = l.getControl(sintf)
 		ief, err := net.InterfaceByName(sintf)
 		if err != nil {
+			// On mobile platforms (Android/iOS), InterfaceByName may fail due to
+			// permission restrictions (SELinux on Android), but for link-local
+			// addresses with zone identifiers, the zone is sufficient for routing
+			// and we can proceed without source binding
+			if dst.IP.IsLinkLocalUnicast() && dst.Zone != "" {
+				return dialer, nil
+			}
 			return nil, fmt.Errorf("interface %q not found", sintf)
 		}
 		if ief.Flags&net.FlagUp == 0 {
@@ -76,6 +83,10 @@ func (l *linkTCP) dialerFor(dst *net.TCPAddr, sintf string) (*net.Dialer, error)
 		}
 		addrs, err := ief.Addrs()
 		if err != nil {
+			// Same mobile platform handling for address lookup failures
+			if dst.IP.IsLinkLocalUnicast() && dst.Zone != "" {
+				return dialer, nil
+			}
 			return nil, fmt.Errorf("interface %q addresses not available: %w", sintf, err)
 		}
 		for addrindex, addr := range addrs {
@@ -104,6 +115,10 @@ func (l *linkTCP) dialerFor(dst *net.TCPAddr, sintf string) (*net.Dialer, error)
 			}
 		}
 		if dialer.LocalAddr == nil {
+			// Proceed without source binding if link-local
+			if dst.IP.IsLinkLocalUnicast() && dst.Zone != "" {
+				return dialer, nil
+			}
 			return nil, fmt.Errorf("no suitable source address found on interface %q", sintf)
 		}
 	}

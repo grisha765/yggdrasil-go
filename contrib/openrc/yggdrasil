@@ -6,7 +6,6 @@ CONFFILE="/etc/yggdrasil.conf"
 pidfile="/run/${RC_SVCNAME}.pid"
 
 command="/usr/bin/yggdrasil"
-extra_started_commands="reload"
 
 depend() {
 	use net dns logger
@@ -15,7 +14,7 @@ depend() {
 start_pre() {
 	if [ ! -f "${CONFFILE}" ]; then
 		ebegin "Generating new configuration file into ${CONFFILE}"
-		if ! eval ${command} -genconf > ${CONFFILE}; then
+		if ! (umask 037 && eval ${command} -genconf > ${CONFFILE}); then
 			eerror "Failed to generate configuration file"
 			exit 1
 		fi
@@ -39,12 +38,6 @@ start() {
 		--stdout /var/log/yggdrasil.stdout.log \
 		--stderr /var/log/yggdrasil.stderr.log \
 		--exec "${command}" -- -useconffile "${CONFFILE}"
-	eend $?
-}
-
-reload() {
-	ebegin "Reloading ${RC_SVCNAME}"
-	start-stop-daemon --signal HUP --pidfile "${pidfile}"
 	eend $?
 }
 

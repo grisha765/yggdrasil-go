@@ -8,7 +8,6 @@ import (
 	"io"
 	"net"
 	"net/url"
-	"time"
 
 	iwe "github.com/Arceliar/ironwood/encrypted"
 	iwn "github.com/Arceliar/ironwood/network"
@@ -28,15 +27,14 @@ type Core struct {
 	// guarantee that it will be covered by the mutex
 	phony.Inbox
 	*iwe.PacketConn
-	ctx          context.Context
-	cancel       context.CancelFunc
-	secret       ed25519.PrivateKey
-	public       ed25519.PublicKey
-	links        links
-	proto        protoHandler
-	log          Logger
-	addPeerTimer *time.Timer
-	config       struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+	secret ed25519.PrivateKey
+	public ed25519.PublicKey
+	links  links
+	proto  protoHandler
+	log    Logger
+	config struct {
 		tls *tls.Config // immutable after startup
 		//_peers             map[Peer]*linkInfo         // configurable after startup
 		_listeners         map[ListenAddress]struct{} // configurable after startup
@@ -159,11 +157,7 @@ func (c *Core) Stop() {
 func (c *Core) _close() error {
 	c.cancel()
 	c.links.shutdown()
-	err := c.PacketConn.Close()
-	if c.addPeerTimer != nil {
-		c.addPeerTimer.Stop()
-		c.addPeerTimer = nil
-	}
+	err := c.Close()
 	return err
 }
 

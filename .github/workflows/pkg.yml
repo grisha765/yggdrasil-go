@@ -16,14 +16,14 @@ jobs:
 
     name: Package (Debian, ${{ matrix.pkgarch }})
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
 
@@ -49,12 +49,12 @@ jobs:
 
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
 
@@ -74,18 +74,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pkgarch: ["x64", "x86", "arm", "arm64"]
+        pkgarch: ["x64", "x86", "arm64"]
 
     name: Package (Windows, ${{ matrix.pkgarch }})
 
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
 
@@ -110,20 +110,20 @@ jobs:
 
     name: Package (Router, ${{ matrix.pkgarch }})
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           path: yggdrasil
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           repository: neilalexander/vyatta-yggdrasil
           path: vyatta-yggdrasil
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "stable"
 

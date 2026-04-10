@@ -20,8 +20,8 @@ type linkQUIC struct {
 }
 
 type linkQUICStream struct {
-	quic.Connection
-	quic.Stream
+	*quic.Conn
+	*quic.Stream
 }
 
 type linkQUICListener struct {
@@ -52,7 +52,7 @@ func (l *links) newLinkQUIC() *linkQUIC {
 
 func (l *linkQUIC) dial(ctx context.Context, url *url.URL, info linkInfo, options linkOptions) (net.Conn, error) {
 	tlsconfig := l.tlsconfig.Clone()
-	return l.links.findSuitableIP(url, func(hostname string, ip net.IP, port int) (net.Conn, error) {
+	return l.findSuitableIP(url, func(hostname string, ip net.IP, port int) (net.Conn, error) {
 		tlsconfig.ServerName = hostname
 		tlsconfig.MinVersion = tls.VersionTLS12
 		tlsconfig.MaxVersion = tls.VersionTLS13
@@ -66,8 +66,8 @@ func (l *linkQUIC) dial(ctx context.Context, url *url.URL, info linkInfo, option
 			return nil, err
 		}
 		return &linkQUICStream{
-			Connection: qc,
-			Stream:     qs,
+			Conn:   qc,
+			Stream: qs,
 		}, nil
 	})
 }
@@ -98,8 +98,8 @@ func (l *linkQUIC) listen(ctx context.Context, url *url.URL, _ string) (net.List
 					continue
 				}
 				ch <- &linkQUICStream{
-					Connection: qc,
-					Stream:     qs,
+					Conn:   qc,
+					Stream: qs,
 				}
 			}
 		}

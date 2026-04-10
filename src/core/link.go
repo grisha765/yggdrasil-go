@@ -28,7 +28,7 @@ const (
 )
 
 const defaultBackoffLimit = time.Second << 12 // 1h8m16s
-const minimumBackoffLimit = time.Second * 30
+const minimumBackoffLimit = time.Second * 5
 
 type links struct {
 	phony.Inbox
@@ -155,8 +155,12 @@ const ErrLinkUnrecognisedSchema = linkError("link schema unknown")
 const ErrLinkMaxBackoffInvalid = linkError("max backoff duration invalid")
 const ErrLinkSNINotSupported = linkError("SNI not supported on this link type")
 const ErrLinkNoSuitableIPs = linkError("peer has no suitable addresses")
+const ErrLinkToSelf = linkError("node cannot connect to self")
 
 func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
+	if _, err := l.dialerFor(u); err != nil {
+		return err
+	}
 	var retErr error
 	phony.Block(l, func() {
 		// Generate the link info and see whether we think we already
@@ -264,12 +268,18 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 		// The caller should check the return value to decide whether
 		// or not to give up trying.
 		backoffNow := func() bool {
-			if backoff < 32 {
+			if backoff >= 0 && backoff < 32 {
 				backoff++
 			}
-			duration := time.Second << backoff
-			if duration > options.maxBackoff {
-				duration = options.maxBackoff
+			var timeout <-chan time.Time
+			if backoff < 0 {
+				timeout = make(chan time.Time)
+			} else {
+				duration := time.Second << backoff
+				if duration > options.maxBackoff {
+					duration = options.maxBackoff
+				}
+				timeout = time.After(duration)
 			}
 			select {
 			case <-state.kick:
@@ -278,7 +288,7 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 				return false
 			case <-l.core.ctx.Done():
 				return false
-			case <-time.After(duration):
+			case <-timeout:
 				return true
 			}
 		}
@@ -358,6 +368,8 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 						doRet = true
 					}
 					state._conn = lc
+					state._err = nil
+					state._errtime = time.Now()
 				})
 				if doRet {
 					return
@@ -366,6 +378,9 @@ func (l *links) add(u *url.URL, sintf string, linkType linkType) error {
 				// Give the connection to the handler. The handler will block
 				// for the lifetime of the connection.
 				switch err = l.handler(linkType, options, lc, resetBackoff, false); {
+				case errors.Is(err, ErrLinkToSelf):
+					// This is a pretty permanent error, don't retry.
+					backoff = -1
 				case err == nil:
 				case errors.Is(err, io.EOF):
 				case errors.Is(err, net.ErrClosed):
@@ -579,6 +594,14 @@ func (l *links) listen(u *url.URL, sintf string, local bool) (*Listener, error) 
 }
 
 func (l *links) connect(ctx context.Context, u *url.URL, info linkInfo, options linkOptions) (net.Conn, error) {
+	dialer, err := l.dialerFor(u)
+	if err != nil {
+		return nil, err
+	}
+	return dialer.dial(ctx, u, info, options)
+}
+
+func (l *links) dialerFor(u *url.URL) (linkProtocol, error) {
 	var dialer linkProtocol
 	switch strings.ToLower(u.Scheme) {
 	case "tcp":
@@ -598,7 +621,7 @@ func (l *links) connect(ctx context.Context, u *url.URL, info linkInfo, options 
 	default:
 		return nil, ErrLinkUnrecognisedSchema
 	}
-	return dialer.dial(ctx, u, info, options)
+	return dialer, nil
 }
 
 func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, success func(), local bool) error {
@@ -633,6 +656,10 @@ func (l *links) handler(linkType linkType, options linkOptions, conn net.Conn, s
 	}
 	if err = conn.SetDeadline(time.Time{}); err != nil {
 		return fmt.Errorf("failed to clear handshake deadline: %w", err)
+	}
+	// Check that the node isn't trying to connect to itself.
+	if meta.publicKey.Equal(l.core.public) {
+		return ErrLinkToSelf
 	}
 	// Check if the remote side matches the keys we expected. This is a bit of a weak
 	// check - in future versions we really should check a signature or something like that.

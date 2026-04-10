@@ -26,6 +26,31 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - in case of vulnerabilities.
 -->
 
+## [0.5.13] - 2026-02-24
+
+* Go 1.24 is now required to build Yggdrasil
+
+### Added
+
+* Pledge is now used on OpenBSD to drop privileges after startup
+* `yggdrasilctl getPeers` can now optionally sort the peers using `sort=uptime` or `sort=cost`
+
+### Changed
+
+* The routing algorithm now tries to minimise both the cost and remaining tree distance to the destination, which should improve some cases where direct paths were ignored in favour of indirect paths
+* The `?maxbackoff=X` time for a peering can now be configured as low as 5 seconds (previously 30 seconds)
+* Reduced memory allocations needed to parse paths or calculate ancestry
+* Upgrade dependencies
+* `yggdrasilctl` now renders table borders/separators, can be disabled with `-borders=false`
+
+### Fixed
+
+* `getPeers` no longer incorrectly surfaces error states that haven't happened
+* Yggdrasil will no longer attempt reconnections after detecting that a peering connection is to itself
+* Disabling TUN with `IfName: none` no longer results in backpressure building up that could block lower layers
+* Outbound connections to link-local addresses should now work correctly on Android
+* `addPeers` no longer allows configuring an empty peer URI
+
 ## [0.5.12] - 2024-12-18
 
 * Go 1.22 is now required to build Yggdrasil
